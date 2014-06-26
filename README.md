@@ -23,5 +23,5 @@ lorsque la pointe effleure le composant (il y a également un système anti-rebo
 
 À suivre...
 
-![Vue OpenSCAD](https://github.com/hugokernel/ManuelPickAndPlace/blob/master/export/images/table_demo.png?raw=true)
+![Vue OpenSCAD](https://raw.githubusercontent.com/hugokernel/ManualPickAndPlace/master/export/images/table_demo.png)
 
