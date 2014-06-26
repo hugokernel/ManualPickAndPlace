@@ -465,13 +465,13 @@ module desk() {
     }
 }
 
-module box_behind() {
+module power_box() {
     difference() {
         box(box_length = 70, box_width = 16.5);
         translate([-26, 4, 10]) {
             rotate([-30, 0, 0]) {
                 cylinder(r = 4, h = 20, center = true);
-                cylinder(r = 10, h = 7);
+                cylinder(r = 10, h = 8);
             }
         }
     }
@@ -1049,7 +1049,7 @@ module demo() {
 
     translate([ -FRAME_LENGTH / 2 + 80, FRAME_WIDTH / 2 + 3, 10 ]) {
         rotate([90, 0, 180]) {
-            box_behind();
+            power_box();
         }
     }
 
@@ -1103,7 +1103,7 @@ stem_support();
 
 desk();
 box();
-box_behind();
+power_box();
 
 cable_passes();
 
