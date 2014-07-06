@@ -143,6 +143,21 @@ module tube_pivot() {
     //connector(link_90 = true, thread = false);
 }
 
+module tube_adaptator(  tube_diameter = 4,
+                        tube_clearance = 0.3,
+                        tube_thickness = 1,
+                        height = 14) {
+
+    connector(link_90 = true, thread = false, thread_height = 0);
+
+    translate([0, 0, -height / 2]) {
+        difference() {
+            cylinder(r = tube_diameter / 2 + tube_thickness * 2, h = height, center = true);
+            cylinder(r = (TUBE_DIAMETER + tube_clearance) / 2, h = 100, center = true);
+        }
+    }
+}
+
 union() {
     tube();
 
@@ -151,5 +166,7 @@ union() {
 
 connector(link_90 = true);
 connector(with_link = false);
-!connector();
+connector();
+
+!tube_adaptator();
 

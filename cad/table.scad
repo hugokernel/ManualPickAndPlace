@@ -576,14 +576,16 @@ module rod_and_support(width = PROFILE_WIDTH) {
 
     // Rod support
     for (data = [
-        [ FRAME_LENGTH / 2 - width / 2, FRAME_WIDTH / 2 - rod_support_offset, PROFILE_WIDTH, -90 ],
-        [ -FRAME_LENGTH / 2 + width / 2, FRAME_WIDTH / 2 - rod_support_offset, PROFILE_WIDTH, -90 ],
-        [ FRAME_LENGTH / 2 - width / 2, -FRAME_WIDTH / 2 + rod_support_offset, PROFILE_WIDTH, 90 ],
-        [ -FRAME_LENGTH / 2 + width / 2, -FRAME_WIDTH / 2 + rod_support_offset, PROFILE_WIDTH, 90 ]
+        [ FRAME_LENGTH / 2 - width / 2, FRAME_WIDTH / 2 - rod_support_offset, PROFILE_WIDTH, -90, 0 ],
+        [ -FRAME_LENGTH / 2 + width / 2, FRAME_WIDTH / 2 - rod_support_offset, PROFILE_WIDTH, -90, 1 ],
+        [ FRAME_LENGTH / 2 - width / 2, -FRAME_WIDTH / 2 + rod_support_offset, PROFILE_WIDTH, 90, 1 ],
+        [ -FRAME_LENGTH / 2 + width / 2, -FRAME_WIDTH / 2 + rod_support_offset, PROFILE_WIDTH, 90, 0 ]
     ]) {
         translate([ data[0], data[1], data[2]]) {
             rotate([0, 0, data[3]]) {
-                rod_support(hole_height = ROD_SUPPORT_HOLE_HEIGHT, thickness = ROD_SUPPORT_THICKNESS);
+                mirror([0, data[4], 0]) {
+                    rod_support(hole_height = ROD_SUPPORT_HOLE_HEIGHT, thickness = ROD_SUPPORT_THICKNESS, stopper = true);
+                }
             }
         }
     }
@@ -596,7 +598,7 @@ module rod_and_support(width = PROFILE_WIDTH) {
         [ -FRAME_WIDTH / 2 + 10, FRAME_LENGTH ]
     ]) {
         translate([ 0, data[0], offset_z ]) {
-            rod(length = data[1]);
+            %rod(length = data[1]);
         }
     }
 }
@@ -694,7 +696,7 @@ module dolly_xs() {
     ]) {
         translate(pos) {
             rotate([0, 0, 90]) {
-                rod(length = FRAME_WIDTH);
+                %rod(length = FRAME_WIDTH);
             }
         }
     }
@@ -873,7 +875,7 @@ module socketRing() {
     }
 }
 
-module socket_small_ring() {
+module socket_small_ring(support = false) {
     external_diameter = 62;
     internal_diameter = 44;
     height = 35;
@@ -888,46 +890,48 @@ module socket_small_ring() {
         }
     }
 
-    %difference() {
-        union() {
-            socket(female = false, height = height, oblong = true, grip = false, thickness = 2);
+    if (support) {
+        difference() {
+            union() {
+                socket(female = false, height = height, oblong = true, grip = false, thickness = 2);
+                pos() {
+                    cylinder(r = 3, h = socket_width + 4, center = true);
+                }
+            }
+
             pos() {
-                cylinder(r = 3, h = socket_width + 4, center = true);
+                cylinder(r = 1.5, h = 100, center = true);
             }
         }
-
-        pos() {
-            cylinder(r = 1.5, h = 100, center = true);
-        }
-    }
-
-    translate([-1, 0, 7 + THICKNESS - height]) {
-        rotate([0, 45, 0]) {
-            difference() {
-                union() {
-                    difference() {
-                        cylinder(r = external_diameter / 2, h = 3, center = true);
-                        cylinder(r = internal_diameter / 2, h = 3.1, center = true);
-                        translate([37, 0, 0]) {
-                            cube(size = [70, 70, 10], center = true);
+    } else {
+        translate([-3, 0, 6.5 + THICKNESS - height]) {
+            rotate([0, 45, 0]) {
+                difference() {
+                    union() {
+                        difference() {
+                            cylinder(r = external_diameter / 2, h = 3, center = true);
+                            cylinder(r = internal_diameter / 2, h = 3.1, center = true);
+                            translate([37, 0, 0]) {
+                                cube(size = [70, 70, 10], center = true);
+                            }
                         }
-                    }
 
-                    for (pos = [
-                        [0, -26.5, 1.5],
-                        [0, 26.5, 1.5]
-                    ]) {
-                        translate(pos) {
-                            rotate([90, 0, 0]) {
-                                cylinder(r = 3, h = (external_diameter - internal_diameter) / 2, center = true);
+                        for (pos = [
+                            [0, -26.5, 1.5],
+                            [0, 26.5, 1.5]
+                        ]) {
+                            translate(pos) {
+                                rotate([90, 0, 0]) {
+                                    cylinder(r = 3, h = (external_diameter - internal_diameter) / 2, center = true);
+                                }
                             }
                         }
                     }
-                }
 
-                translate([0, 0, 1.5]) {
-                    rotate([90, 0, 0]) {
-                        cylinder(r = 1.5, h = 100, center = true);
+                    translate([0, 0, 1.5]) {
+                        rotate([90, 0, 0]) {
+                            cylinder(r = 1.5, h = 100, center = true);
+                        }
                     }
                 }
             }
@@ -1016,6 +1020,17 @@ module dolly_ys(thickness = THICKNESS) {
     }
 }
 
+module demo_dollys(pos0, pos1) {
+    translate(pos0) {
+        dolly_xs();
+        translate(pos1) {
+            translate([0, 0, PROFILE_WIDTH + ROD_SUPPORT_HOLE_HEIGHT + 17]) {
+                dolly_ys();
+            }
+        }
+    }
+}
+
 module demo() {
     frame();
 
@@ -1053,23 +1068,33 @@ module demo() {
         }
     }
 
-    echo($t);
+    if ($t < 0.5) {
+        demo_dollys([DOLLY_X_POSITION - 220 + ($t * 690), 0, 0], [0, DOLLY_Y_POSITION - 170 + ($t * 430), 0]);
+    } else {
+        demo_dollys([DOLLY_X_POSITION - 220 + ((1 - $t) * 690), 0, 0], [0, DOLLY_Y_POSITION - 170 + ((1 - $t) * 430), 0]);
+    }
+}
 
-    translate([-100, 0, 0]) {
-        translate([DOLLY_X_POSITION - 125 + ($t * 100), 0, 0]) {
-            dolly_xs();
-            translate([0, DOLLY_Y_POSITION - 120 + ($t * 50), 0]) {
-                translate([0, 0, PROFILE_WIDTH + ROD_SUPPORT_HOLE_HEIGHT + 17]) {
-                    dolly_ys() {
-                        socketRing();
-                    }
-                }
-            }
+module demo_step(step = 0) {
+    if (step >= 0) {
+        frame();
+    }
+
+    if (step >= 1) {
+        rod_and_support();
+    }
+
+    if (step == 2) {
+        if ($t < 0.5) {
+            demo_dollys([DOLLY_X_POSITION - 320 + ($t * 850), 0, 0], [0, DOLLY_Y_POSITION - 170 + ($t * 430), 0]);
+        } else {
+            demo_dollys([DOLLY_X_POSITION - 320 + ((1 - $t) * 850), 0, 0], [0, DOLLY_Y_POSITION - 170 + ((1 - $t) * 430), 0]);
         }
     }
 }
 
-!demo();
+demo();
+!demo_step(2);
 
 lm12uu_holder();
 

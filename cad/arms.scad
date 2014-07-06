@@ -8,18 +8,46 @@ BEARING_EXTERNAL_DIAMETER = 22.05;
 BEARING_INTERNAL_ROTATE_DIAMETER = 12;
 BEARING_HEIGHT = 7;
 
+BEARING_FLANGE_DIAMETER = 25.06;
+BEARING_FLANGE_THICKNESS = 1.54;
+
 THICKNESS = 5;
 
 ARM_THICKNESS = 3;
 
 DEMO = false;
 
+module tube(external, internal, height) {
+    difference() {
+        cylinder(r = external / 2, height, center = true);
+        cylinder(r = internal / 2, height * 2, center = true);
+    }
+}
+
+module bearing( external_diameter = BEARING_EXTERNAL_DIAMETER,
+                internal_diameter = BEARING_INTERNAL_DIAMETER,
+                height = BEARING_HEIGHT,
+                flange_diameter = 0,
+                flange_thickness = 0
+                ) {
+
+    tube(external_diameter, internal_diameter, height);
+
+    if (flange_thickness) {
+        translate([0, 0, height / 2 - flange_thickness / 2]) {
+            tube(flange_diameter, external_diameter - 1, flange_thickness);
+        }
+    }
+}
+
+/*
 module bearing() {
     difference() {
         cylinder(r = BEARING_EXTERNAL_DIAMETER / 2, BEARING_HEIGHT, center = true);
         cylinder(r = BEARING_INTERNAL_DIAMETER / 2, BEARING_HEIGHT * 2, center = true);
     }
 }
+*/
 
 module m3_nut(height = 2) {
     cylinder(r = 3.4, h = height, center = true, $fn = 6);
@@ -36,11 +64,12 @@ module m3_cone(height = 2) {
 module arm_male(width = 15,
                 length = 40,
                 thickness = ARM_THICKNESS,
-                holder_height = BEARING_HEIGHT / 2, 
+                holder_height = BEARING_HEIGHT / 2,
                 nut = true,
-                cone = false) {
+                cone = false,
+                bearing_support_thickness = 0.5,
+                slot = true) {
 
-    bearing_support_thickness = 0.5;
     bearing_support_diameter = 12;
 
     clear = -0.15;
@@ -49,7 +78,7 @@ module arm_male(width = 15,
         translate([0, 0, bearing_support_thickness / 2]) {
             cylinder(r = bearing_support_diameter / 2, h = bearing_support_thickness, center = true);
 
-            translate([0, 0, BEARING_HEIGHT / 4]) {
+            translate([0, 0, thickness / 2 + holder_height / 2 - bearing_support_thickness]) {
                 cylinder(r = BEARING_INTERNAL_DIAMETER / 2 - clear, h = holder_height, center = true);
             }
         }
@@ -79,6 +108,19 @@ module arm_male(width = 15,
                 }
 
                 cube(size = [length, 15, thickness], center = true);
+
+                // Slot
+                if (slot) {
+                    for (pos = [
+                        [0, 5, thickness / 2],
+                        [0, 0, thickness / 2],
+                        [0, -5, thickness / 2]
+                    ]) {
+                        translate(pos) {
+                            cube(size = [length, 3, 1], center = true);
+                        }
+                    }
+                }
             }
 
             translate([0, 0, -thickness / 5.5]) {
@@ -258,13 +300,15 @@ module holder(thickness = 18) {
 }
 
 module mount_point() {
-    thickness = BEARING_HEIGHT;
+    thickness = 7;
     union() {
-        socket(female = false, height = 35, oblong = true, hole_diameter = 4.5);
+        translate([thickness / 2 - 3, 0, 0]) {
+            socket(female = false, thickness = 8, height = 35, oblong = true, hole_diameter = 4.5);
+        }
 
         translate([0, 17, 2.5]) {
             rotate([0, 0, 90]) {
-                linear_extrude(height = thickness + .5) {
+                linear_extrude(height = BEARING_HEIGHT + .5) {
                     polygon([[3,2],[18,2],[18,5],[14,10],[12.5,23]]);
                 }
             }
@@ -280,7 +324,7 @@ module mount_point() {
 
         translate([-2.5, 29.5, 0]) {
             rotate([-90, 180, -90]) {
-                linear_extrude(height = 5) {
+                linear_extrude(height = thickness) {
                     polygon([[-10, 10],[-10,-15],[16,5],[16,10]]);
                 }
             }
@@ -288,55 +332,7 @@ module mount_point() {
     }
 
     translate([-15, 42, 6.5]) {
-        female_bearing(thickness = thickness, closed = true, closed_cap_thickness = 0.5);
-    }
-}
-
-module demo() {
-
-    final_horizontal_angle = 0;
-    vertical_angle = 0;
-
-    module dbl_arm_male(width = 15, length = 40, thickness = 3) {
-        arm_male(width, length, thickness);
-        translate([0, 0, 11]) {
-            rotate([ 180, 0, 0]) {
-                arm_male(width, length, thickness);
-            }
-        }
-    }
-
-    mount_point();
-
-    translate([-15, 35, 2.5]) {
-        rotate([0, 0, 180 - 0]) {
-            dbl_arm_male(length = 60);
-        }
-    }
-
-    translate([-80, 35, 0]) {
-        rotate([0, 0, 45]) {
-            translate([0, 0, 3]) {
-                rotate([0, 90, -45 + final_horizontal_angle]) {
-                    //arm_blocker();
-                    tripod(blocker = true);
-                    /*
-                    %arm_female_special() {
-                        translate([40, 0, -6]) {
-                            rotate([0, 0, -60 + vertical_angle]) {
-                                dbl_arm_male();
-                            }
-                        }
-                        translate([0, 0, -6]) {
-                            rotate([0, 0, -60 + vertical_angle]) {
-                                dbl_arm_male();
-                            }
-                        }
-                    }
-                    */
-                }
-            }
-        }
+        female_bearing(thickness = BEARING_HEIGHT, closed = true, closed_cap_thickness = 0.5);
     }
 }
 
@@ -421,11 +417,160 @@ module holder_male_syringe() {
     %cylinder(r = 25 / 2, h = 115, center = true);
 }
 
+module demo() {
+
+    final_horizontal_angle = 0;
+    vertical_angle = 0;
+    arm_length = 50;
+
+    module dbl_arm_male(width = 15, length = 40, thickness = 3) {
+        //arm_male(width, length, thickness);
+        arm_link();
+        translate([0, 0, 12.6]) {
+            rotate([ 180, 0, 0]) {
+                arm_link();
+                //arm_male(width, length, thickness);
+            }
+        }
+    }
+
+    module arms(angle = 0) {
+        //rotate([90, angle, -270]) {
+        rotate([0, 0, angle]) {
+            arm_male();
+        }
+
+        translate([0, 39.5, 0]) {
+            rotate([0, 0, angle]) {
+                arm_blocker();
+            }
+        }
+    }
+
+    //$t = 0;
+
+    module mobile(angle = 0) {
+
+        // Very uggly !
+        offset_z = angle * 0.6;
+
+        translate([47 - arm_length, 0.5, 5]) {
+            rotate([0, -90, -180 + final_horizontal_angle]) {
+                //arm_blocker();
+                tripod(blocker = true);
+            }
+        }
+
+        translate([25.5 - arm_length, -39.5, -14.5 - offset_z]) {
+            rotate([90, 0, 90]) {
+                arms(angle);
+            }
+        }
+
+        translate([31 - arm_length, -39.5, 5.5 - offset_z]) {
+            rotate([0, 90, 0]) {
+                holder();
+            }
+        }
+
+        translate([55 - arm_length, -39.5, 8 - offset_z]) {
+            holder_male_bearing();
+        }
+    }
+
+    mount_point();
+
+    translate([-15, 42, 0.75]) {
+        rotate([0, 0, 180 - 0]) {
+            dbl_arm_male(length = arm_length);
+        }
+    }
+
+    translate([-64.5, 42, -0.25]) {
+        rotate([0, 0, $t * 20]) {
+            mobile(angle = $t * 20);
+        }
+    }
+}
+
+module arm_link(width = 15, length = 50, thickness = 3, holder_height = BEARING_HEIGHT / 2 + 0.75, male = true, nut = true, cone = false) {
+    bearing_support_thickness = 1.5;
+    /*
+        arm_male(width = 15,
+                length = 40,
+                thickness = ARM_THICKNESS,
+                holder_height = BEARING_HEIGHT / 2,
+                nut = true,
+                cone = false) {
+     */
+    arm_male(width = 15, length = length, thickness = thickness, holder_height = holder_height, bearing_support_thickness = bearing_support_thickness, nut = nut, cone = cone);
+
+    module pos() {
+        translate([length / 2, 0, thickness / 2 + holder_height / 2]) {
+            if ($children) {
+                for (i = [0 : $children - 1]) {
+                    children(i);
+                }
+            }
+        }
+    }
+
+    module block(height = 3) {
+        hull() {
+            for (pos = [
+                [0, -4, holder_height / 2 + bearing_support_thickness],
+                [0, 4, holder_height / 2 + bearing_support_thickness]
+            ]) {
+                translate(pos) {
+                    cylinder(r = 2, h = height, center = true);
+                }
+            }
+        }
+    }
+
+    coeff = 1.07;
+    pos() {
+        difference() {
+            cube(size = [8, width, holder_height + bearing_support_thickness], center = true);
+            if (!male) {
+                scale([coeff, coeff, coeff]) {
+                    translate([0, 0, -2.5]) {
+                        block(height = 5);
+                    }
+                }
+            }
+        }
+    }
+
+    if (male) {
+        pos() {
+            block();
+        }
+    }
+
+    if (male)
+    %translate([0, 0, 6.5]) {
+        bearing(flange_diameter = BEARING_FLANGE_DIAMETER, flange_thickness = BEARING_FLANGE_THICKNESS);
+    }
+}
+
 demo();
 
-!mount_point();
+module paf() {
+    arm_link(nut = false, cone = true);
+    translate([0, 0, 13]) {
+        rotate([180, 0, 0]) {
+            arm_link(male = false, nut = false, cone = true);
+        }
+    }
+}
 
-//arm_male(length=40, holder_height=BEARING_HEIGHT);
+!paf();
+
+arm_link(nut = false, cone = true);
+arm_link(male = false);
+
+mount_point();
 
 arm_male(length=40, nut=true);
 arm_male(length=40, nut=false, cone=true);

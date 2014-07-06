@@ -140,76 +140,25 @@ module link() {
         union() {
             cylinder(r = BEARING_INTERNAL_DIAMETER / 2 + bearing_clear, h = LINK_HEIGHT);
 
-            /*
-            translate([0, 0, 14]) {
-                hull() {
-                    cylinder(r = 12 / 2, h = 4);
-                    translate([0, 0, 4]) {
-                        cylinder(r = BEARING_INTERNAL_DIAMETER / 2, h = 5);
-                    }
-                }
-                //cylinder(r = 12 / 2, h = LINK_HEIGHT - thread_length);
-            }
-            */
-
-            translate([0, 0, LINK_HEIGHT - thread_length]) {
-                hull() {
-                    cylinder(r = BEARING_INTERNAL_DIAMETER / 2, h = 5);
-                    translate([0, 0, 4]) {
-                        cylinder(r = 12 / 2, h = 4);
-                    }
-                }
-            }
-
             translate([0, 0, LINK_HEIGHT - 0.3]) {
                 thread();
             }
 
-            //translate([0, 0, 12.5]) {
             translate([0, 0, 26]) {
                 cylinder(   r1 = BEARING_INTERNAL_DIAMETER / 2 + bearing_clear,
-                            r2 = BEARING_INTERNAL_DIAMETER / 2 + bearing_clear + 1,
-                            h = 1);
+                            r2 = 6,
+                            h = 2);
             }
 
-            translate([0, 0, 27]) {
-                cylinder(   r = BEARING_INTERNAL_DIAMETER / 2 + bearing_clear + 1,
-                            h = 3);
-            }
-
-            translate([0, 0, 30]) {
-                cylinder(   r1 = BEARING_INTERNAL_DIAMETER / 2 + bearing_clear + 1,
-                            r2 = BEARING_INTERNAL_DIAMETER / 2 + bearing_clear,
-                            h = 1);
+            translate([0, 0, 28]) {
+                cylinder(   r = 6,
+                            h = 19);
             }
         }
 
         translate([0, 0, -0.5]) {
             cylinder(r = (TUBE_DIAMETER + TUBE_CLEARANCE) / 2, h = 100);
         }
-
-        // Useless...
-        %for (pos = [
-            [0, 0, BEARING_HEIGHT / 2 + 13 - 0.5],
-            [0, 0, BEARING_HEIGHT / 2 - 0.5]
-        ]) {
-            translate(pos) {
-                rotate([0, 90, 0]) {
-                    cylinder(r = 0.7, h = 50, center = true);
-                }
-            }
-        }
-
-        /*
-        %for (data = [
-            [0, 0, 13 + 0, 1],
-            [0, 0, 0, 0]
-        ]) {
-            translate([data[0], data[1], data[2]]) {
-                blocker_big(chamfrein = data[3]);
-            }
-        }
-        */
     }
 }
 
@@ -558,7 +507,15 @@ module test() {
     }
 }
 
-demo();
+/*
+difference() {
+    demo();
+    translate([0, -25, 0]) {
+        cube(size = [20, 50, 180]);
+    }
+}
+*/
+
 demo(exploded = 25);
 test();
 
