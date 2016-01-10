@@ -17,7 +17,7 @@ DOLLY_Y_POSITION = 50;
 DOLLY_X_GAP = 70;
 DOLLY_Y_GAP = 70; // 70 !
 
-ROD_SUPPORT_HOLE_HEIGHT = 10;
+ROD_SUPPORT_HOLE_HEIGHT = 11.5;
 ROD_SUPPORT_THICKNESS = 20;
 
 FIXATION_HOLE_DIAMETER = 6;
@@ -138,15 +138,13 @@ module profileSlot(length, slot_thickness = profile_slot_thickness) {
 }
 
 rod_support_offset = 10;
-module rod_support(hole_height = 26, base_thickness = 6, thickness = 20, fixation_hole_diameter = FIXATION_HOLE_DIAMETER, screw_head_diameter = SCREW_HEAD_DIAMETER, stopper = false, stopper_thickness = 1.5) {
-
-    hole_height = 10;
+module rod_support(hole_height = ROD_SUPPORT_HOLE_HEIGHT, base_thickness = 6, thickness = 20, fixation_hole_diameter = FIXATION_HOLE_DIAMETER, screw_head_diameter = SCREW_HEAD_DIAMETER, stopper = false, stopper_thickness = 1.5) {
 
     module profile(thickness) {
         hull() {
             // Base
-            translate([5, 0, 0]) {
-                cube(size = [30, thickness, base_thickness], center = true);
+            translate([6, 0, 0]) {
+                cube(size = [32, thickness, base_thickness], center = true);
             }
 
             translate([0, 0, hole_height - base_thickness / 2]) {
@@ -192,13 +190,12 @@ module rod_support(hole_height = 26, base_thickness = 6, thickness = 20, fixatio
     }
 }
 
-module blocker( hole_height = 26,
+module blocker( hole_height = ROD_SUPPORT_HOLE_HEIGHT,
                 base_thickness = 6,
                 thickness = 20,
                 fixation_hole_diameter = FIXATION_HOLE_DIAMETER,
                 screw_head_diameter = SCREW_HEAD_DIAMETER) {
 
-    hole_height = 10;
     rod_clear = .2;
     profile_clear = 0.2;
 
@@ -1094,7 +1091,7 @@ module demo_step(step = 0) {
 }
 
 demo();
-!demo_step(2);
+demo_step(2);
 
 lm12uu_holder();
 
@@ -1110,7 +1107,7 @@ mirror([0, 1, 0]) {
     rod_support(stopper = true); // x2
 }
 
-/*
+
 union() {
     translate([ -FRAME_LENGTH / 2 + PROFILE_WIDTH / 2, -FRAME_WIDTH / 2 + rod_support_offset + 50, -PROFILE_WIDTH ]) {
         frame();
@@ -1119,10 +1116,14 @@ union() {
     rotate([0, 0, 0]) {
         blocker();
     }
-}
-*/
 
-blocker();
+    %translate([0, 10, 0]) {
+        rod_support();
+    }
+}
+
+
+!blocker();
 
 stem_support();
 

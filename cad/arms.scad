@@ -1,5 +1,6 @@
 
 use <table.scad>
+use <common.scad>
 
 $fn = 40;
 
@@ -38,6 +39,10 @@ module bearing( external_diameter = BEARING_EXTERNAL_DIAMETER,
             tube(flange_diameter, external_diameter - 1, flange_thickness);
         }
     }
+}
+
+module bearing_flange() {
+    bearing(flange_diameter=BEARING_FLANGE_DIAMETER, flange_thickness=BEARING_FLANGE_THICKNESS);
 }
 
 /*
@@ -174,6 +179,26 @@ module female_bearing(  width = 30,
     }
 }
 
+module female_bearing_flange(   width = 30,
+                                thickness = BEARING_HEIGHT,
+                                clear = 0.15,
+                                fn = $fn) {
+    difference() {
+        cylinder(r = width / 2, h = thickness, center = true, $fn = fn);
+        bearing(    height=BEARING_HEIGHT + 0.1,
+                    flange_diameter = BEARING_FLANGE_DIAMETER + clear,
+                    internal_diameter=0,
+                    flange_thickness = BEARING_FLANGE_THICKNESS,
+                    external_diameter=BEARING_EXTERNAL_DIAMETER + clear);
+    }
+
+    if (DEMO) {
+        color("GREY") {
+            bearing_flange();
+        }
+    }
+}
+
 module arm_female(gap = 40, thickness = 5, closed = false) {
 
     width = 30;
@@ -199,28 +224,6 @@ module arm_female(gap = 40, thickness = 5, closed = false) {
         }
     } else {
         cube(size = [gap - BEARING_EXTERNAL_DIAMETER - clear * 2, 15, thickness], center = true);
-    }
-}
-
-module arm_female_special(thickness = 5, closed = false, width = 35, fn = $fn) {
-
-    clear = 0.2;
-
-    translate([0, 0, -16]) {
-        rotate([180, 0, 0]) {
-            arm_female(thickness = thickness, closed = closed) {
-                if ($children) {
-                    children(0);
-                    children(1);
-                }
-            }
-        }
-
-        translate([0, 0, 18]) {
-            rotate([0, 90, 0]) {
-                female_bearing(width = width, thickness = thickness, clear = clear, fn = fn);
-            }
-        }
     }
 }
 
@@ -306,9 +309,9 @@ module mount_point() {
             socket(female = false, thickness = 8, height = 35, oblong = true, hole_diameter = 4.5);
         }
 
-        translate([0, 17, 2.5]) {
+        translate([0, 17, 3]) {
             rotate([0, 0, 90]) {
-                linear_extrude(height = BEARING_HEIGHT + .5) {
+                linear_extrude(height = BEARING_HEIGHT) {
                     polygon([[3,2],[18,2],[18,5],[14,10],[12.5,23]]);
                 }
             }
@@ -331,8 +334,14 @@ module mount_point() {
         }
     }
 
-    translate([-15, 42, 6.5]) {
-        female_bearing(thickness = BEARING_HEIGHT, closed = true, closed_cap_thickness = 0.5);
+    translate([-5, 62.3, BEARING_HEIGHT / 2 - 0.5]) {
+        spirit_level_support(height=BEARING_HEIGHT);
+    }
+
+    //translate([-15, 42, 6.5]) {
+        //female_bearing(thickness = BEARING_HEIGHT, closed = true, closed_cap_thickness = 0.5);
+    translate([-17, 43, 6.5]) {
+        female_bearing_flange(thickness = BEARING_HEIGHT, width=35, clear = 0.35);
     }
 }
 
@@ -366,7 +375,32 @@ module tripod(blocker = false) {
         }
     }
 
-    arm_female_special(thickness = thickness, closed = true, width = 38);//, fn = 10);
+    /*
+    rotate([0, 90, 0]) {
+        translate([12, -19, -BEARING_HEIGHT / 2]) {
+            spirit_level_support(height=BEARING_HEIGHT);
+        }
+    }
+    */
+
+    clear = 0.2;
+
+    translate([0, 0, -16]) {
+        rotate([180, 0, 0]) {
+            //difference() {
+                arm_female(thickness = thickness, closed = true);
+                //cube(size= [ 5, 5, 20 ], center = true);
+            //}
+        }
+
+        translate([0, 0, 19]) {
+            rotate([0, 90, 0]) {
+                female_bearing_flange(width = 38, thickness = thickness, clear = clear, fn = $fn);
+            }
+        }
+    }
+
+    //arm_female_special(thickness = thickness, closed = true, width = 38);//, fn = 10);
 
     if (blocker) {
         translate([gap / 2, 0, -14.75]) {
@@ -480,13 +514,13 @@ module demo() {
 
     mount_point();
 
-    translate([-15, 42, 0.75]) {
+    translate([-17, 42, 0.75]) {
         rotate([0, 0, 180 - 0]) {
             dbl_arm_male(length = arm_length);
         }
     }
 
-    translate([-64.5, 42, -0.25]) {
+    translate([-68.5, 42, -0.25]) {
         rotate([0, 0, $t * 20]) {
             mobile(angle = $t * 20);
         }
@@ -554,7 +588,115 @@ module arm_link(width = 15, length = 50, thickness = 3, holder_height = BEARING_
     }
 }
 
-demo();
+/*
+module led_support() {
+    width = 15;
+
+    linear_extrude(height = 2) {
+        difference() {
+            hull() {
+                for (pos = [ -12.5, 12.5 ]) {
+                    translate([0, pos, 0]) {
+                        circle(r = width / 2);
+                    }
+                }
+            }
+
+             for (pos = [ -12.5, 12.5 ]) {
+                translate([0, pos, 0]) {
+                    circle(r = 1);
+                }
+             }
+
+            circle(r = 3);
+        }
+
+        width2 = 7;
+        difference() {
+            union() {
+                translate([width / 2, -width2 / 2, 0]) {
+                    square([30, width2]);
+                }
+
+                translate([30 + width / 2, 0, 0]) {
+                    circle(r = 5);
+                }
+            }
+
+            translate([30 + width / 2, 0, 0]) {
+                circle(r = 3 / 2);
+            }
+        }
+    }
+}
+*/
+
+module led_support() {
+
+    height = 7;
+
+    module half_moon(external_diameter, internal_diameter, height) {
+        difference() {
+            cylinder(r = external_diameter / 2, h = height, center = true);
+            cylinder(r = internal_diameter / 2, h = height * 2, center = true);
+            translate([external_diameter / 2, 0, 0]) {
+                cube(size = [external_diameter, external_diameter, height * 2], center = true);
+            }
+
+            translate([-external_diameter / 2 + 1, -external_diameter / 2, 0]) {
+                cube(size = [external_diameter, external_diameter, height * 2], center = true);
+            }
+        }
+    }
+
+    module half_moon_led() {
+        difference() {
+            union() {
+                half_moon(external_diameter=36, internal_diameter=32, height=6);
+                translate([0, 0, 2.5]) {
+                    half_moon(external_diameter=40, internal_diameter=30, height=height);
+                }
+
+                translate([-15, 0, -1]) {
+                    rotate([0, 0, 45]) {
+                        cube(size = [22, 6, height]);
+                    }
+                }
+            }
+
+            translate([2, 12, -4]) {
+                rotate([0, 0, 45]) {
+                    cube(size = [10, height * 2, height * 2]);
+                }
+            }
+
+            translate([-4.7, 15.0, 2.5]) {
+                rotate([0, -90, 45]) {
+                    scale([1.1, 1.1, 1.1]) {
+                        led();
+                    }
+                }
+            }
+        }
+
+        for (rot = [ 25, 70 ]) {
+            rotate([ 0, 0, rot ]) {
+                translate([ 0, 17, -4.5 ]) {
+                    cylinder(r = 0.7, h = 3);
+                }
+            }
+        }
+    }
+
+    half_moon_led();
+    mirror([0, 1, 0]) {
+        half_moon_led();
+    }
+}
+
+led_support();
+
+!demo();
 
 module paf() {
     arm_link(nut = false, cone = true);
@@ -565,7 +707,7 @@ module paf() {
     }
 }
 
-!paf();
+paf();
 
 arm_link(nut = false, cone = true);
 arm_link(male = false);
@@ -578,7 +720,14 @@ arm_male(length=40, nut=false, cone=true);
 arm_male(length=0, nut=false, cone=true);
 arm_male(length=0, nut=true, cone=false);
 
-tripod(blocker = true);
+rotate([0, -90, 0]) {
+    tripod(blocker = true);
+}
+
+union() {
+    female_bearing_flange(width = 35, clear = 0.35, fn = fn);
+    //%bearing_flange();
+}
 
 arm_blocker();
 

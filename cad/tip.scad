@@ -2,6 +2,7 @@
 $fn = 40;
 
 use <lib/Thread_Library.scad>
+use <common.scad>
 //use <tip_OLD.scad>
 
 BEARING_INTERNAL_DIAMETER = 7.8;
@@ -296,10 +297,15 @@ module cuff() {
 }
 
 module cuff_cap() {
+
+    module spirit_level_position() {
+        translate([9, 0, 10.7]) {
+            children(0);
+        }
+    }
+
     difference() {
         union() {
-            //cylinder(r = cuff_external_radius, h = cap_thread_length, $fn = 12);
-
             hull() {
                 cylinder(r = cuff_external_radius, $fn = 12);
 
@@ -313,23 +319,32 @@ module cuff_cap() {
                     }
                 }
             }
-
-            /*
-            translate([0, 0, cap_thread_length - 0.1]) {
-                difference() {
-                    sphere(r = cuff_external_radius, $fn = 12);
-                    translate([0, 0, - cuff_external_radius / 2]) {
-                        cube(size = [50, 50, cuff_external_radius], center = true);
-                    }
-                }
-            }
-            */
         }
 
         translate([0, 0, -1]) {
+            // Thread
             cylinder(r = cuff_internal_radius + 3, h = 10);
-            cylinder(r = (TUBE_DIAMETER + TUBE_CLEARANCE) / 2 + 2, h = 50);
+
+            // Tube
+            cylinder(r = (TUBE_DIAMETER + TUBE_CLEARANCE) / 2, h = 50);
+
+            // Electrical wire
+            translate([-4.5, 0, 0]) {
+                cylinder(r = 1, h = 50);
+            }
         }
+
+        spirit_level_position() {
+            cylinder(r=5, h=10);
+        }
+
+        spirit_level_position() {
+            cylinder(r=2.5, h=100, center=true);
+        }
+    }
+
+    spirit_level_position() {
+        spirit_level_support(wall_thickness=1);
     }
 
     cap_thread(male = false);
@@ -507,23 +522,21 @@ module test() {
     }
 }
 
-/*
 difference() {
     demo();
     translate([0, -25, 0]) {
         cube(size = [20, 50, 180]);
     }
 }
-*/
 
-demo(exploded = 25);
+demo();//exploded = 25);
 test();
 
-!link();
+link();
 
 cuff();
 cuff_internal();
-cuff_cap();
+!cuff_cap();
 
 cap_thread(male = false);
 intersection() {
